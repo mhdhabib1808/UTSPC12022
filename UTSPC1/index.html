@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link href="Logo.png" rel="icon" type="image/gif">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UTS PC1 - 008</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css?family=Sofia" rel="stylesheet">
+</head>
+
+<style>
+    * {
+        box-sizing: ;
+    }
+
+    .column {
+        float: center;
+        padding: 20px;
+        width: 33.3%;
+    }
+
+    .row:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+
+    button {
+        position: relative;
+        border: none;
+        color: rgb(0, 0, 0);
+        width: 30%;
+        height: 10%;
+        line-height: 1cm;
+        text-align: center;
+        background: linear-gradient(90deg, #03a9f4, #f441a5,
+                #ffeb3b, #03a9f4);
+        background-size: 300%;
+        border-radius: 30px;
+        text-transform: uppercase;
+        cursor: pointer;
+        z-index: 1;
+    }
+
+    button:hover {
+        animation: animation 8s linear infinite;
+        border: none;
+    }
+
+    @keyframes animation {
+        0% {
+            background-position: 0%;
+        }
+
+        100% {
+            background-position: 300%;
+        }
+    }
+
+    button:before {
+        content: "";
+        position: absolute;
+        top: -5px;
+        left: -5px;
+        right: -5px;
+        bottom: -5px;
+        z-index: -1;
+        background: lightblue;
+        background-size: 400%;
+        border-radius: 35px;
+        transition: 1s;
+    }
+
+    button:hover::before {
+        filter: blur(20px);
+    }
+
+    body {
+        background-image: url(bg.jpg);
+    }
+</style>
+
+
+<body>
+    <center>
+        <h1 style="font-family: 'Poppins', sans-serif; font-size: 250%; color: rgb(0, 0, 0;">UTS
+            PC1 <br></h1>
+        <div class="row">
+            <div class="column">
+                <canvas id='canvas1' style='display:block;margin:20px'></canvas>
+                <canvas id='canvas2' style='display:block;margin:-100px'></canvas>
+            </div>
+            <div class="column">
+                <button id='ori'><b>ORIGINAL IMAGE</b></button><br><br>
+                <button id='read'><b>READ IMAGE</b></button><br><br>
+                <button id='b'><b>RGB Mean</b></button><br><br>
+                <button id='c'><b>RGBY</b></button><br><br>
+            </div>
+        </div>
+    </center>
+</body>
+
+
+<script src='pc.js'></script>
+<script>
+    var canvas = document.getElementById('canvas1')
+    var obj = new pc(canvas)
+    obj.image2canvas("USU.jpg")
+    var canvas2 = document.getElementById('canvas2')
+    var obj2 = new pc(canvas2)
+    obj2.blank2canvas(200, 200)
+    var tes = new Array()
+
+    document.getElementById('read').addEventListener('click', function () {
+        tes = obj.image2read()
+    })
+
+    document.getElementById('ori').addEventListener('click', function () {
+        obj.image2original()
+    })
+
+
+    document.getElementById('b').addEventListener('click', function () {
+        filtersize = 5
+        borderparam = (filtersize - 1) / 2
+        meandoubleparam = filtersize * filtersize
+        tesbackup = new Array()
+        for (var c = 0; c < tes.length; c++) {
+            temp = new Array()
+            for (var d = 0; d < 4; d++) {
+                temp.push(tes[c][d])
+            }
+            tesbackup.push(temp)
+        }
+        var wnow = obj.width
+        for (var i = 0; i < tesbackup.length; i++) {
+            x = obj.i2x(i)
+            y = obj.i2y(i)
+            if (x <= wnow / 4) {
+                posnow = obj.xy2i(wnow - x - 1, y)
+                tes[i][0] = 255
+                tes[i][1] = tesbackup[i][1]
+                tes[i][2] = tesbackup[i][2]
+            }
+
+            else if (x <= wnow / 2) {
+                posnow = obj.xy2i(wnow - x - 1, y)
+                tes[i][0] = tesbackup[i][0]
+                tes[i][1] = 255
+                tes[i][2] = tesbackup[i][2]
+                tes[i][3] = tesbackup[i][3]
+            }
+
+            else if (x >= wnow / 2) {
+                xstart = obj.i2x(i) - borderparam
+                xend = obj.i2x(i) + borderparam
+                ystart = obj.i2y(i) - borderparam
+                yend = obj.i2y(i) + borderparam
+                red = 0
+                green = 0
+                blue = 0
+                disvparam = 0
+                for (var yc = ystart; yc <= yend; yc++) {
+                    for (var xc = xstart; xc <= xend; xc++) {
+                        if (yc >= 0 && xc >= 0 && xc < obj.width && yc < obj.height) {
+                            red += tesbackup[obj.xy2i(xc, yc)][0]
+                            green += tesbackup[obj.xy2i(xc, yc)][1]
+                            blue += tesbackup[obj.xy2i(xc, yc)][2]
+                            disvparam++;
+                        }
+                    }
+                }
+                tes[i][0] = Math.floor(red / disvparam)
+                tes[i][1] = Math.floor(green / disvparam)
+                tes[i][2] = Math.floor(blue / disvparam)
+            }
+        }
+
+        obj.array2canvas(tes)
+    })
+    document.getElementById('c').addEventListener('click', function () {
+        filtersize = 1
+        borderparam = (filtersize - 1) / 2
+        meandoubleparam = filtersize * filtersize
+        tesbackup = new Array()
+        for (var c = 0; c < tes.length; c++) {
+            temp = new Array()
+            for (var d = 0; d < 4; d++) {
+                temp.push(tes[c][d])
+            }
+            tesbackup.push(temp)
+        }
+        var wnow = obj.width
+        var ynow = obj.height
+        for (var i = 0; i < tesbackup.length; i++) {
+            x = obj.i2x(i)
+            y = obj.i2y(i)
+            if (x <= wnow / 2 && y <= ynow / 2) {
+                posnow = obj.xy2i(wnow - x - 1 && ynow - y - 1)
+                tes[i][0] = 255
+                tes[i][1] = tesbackup[i][1]
+                tes[i][2] = tesbackup[i][2]
+                tes[i][3] = tesbackup[i][3]
+            }
+            else if (x >= wnow / 2 && y <= ynow / 2) {
+                posnow = obj.xy2i(wnow - x - 1 && ynow - y - 1)
+                tes[i][0] = tesbackup[i][0]
+                tes[i][1] = 255
+                tes[i][2] = tesbackup[i][2]
+                tes[i][3] = tesbackup[i][3]
+            }
+            else if (x >= wnow / 2 && y >= ynow / 2) {
+                posnow = obj.xy2i(wnow - x - 1 && ynow - y - 1)
+                tes[i][0] = tesbackup[i][0]
+                tes[i][1] = tesbackup[i][1]
+                tes[i][2] = 255
+                tes[i][3] = tesbackup[i][3]
+            }
+            else if (x <= wnow / 1 && y <= ynow / 1) {
+                posnow = obj.xy2i(wnow - x - 1 && ynow - y - 1)
+                tes[i][0] = 255
+                tes[i][1] = 255
+                tes[i][2] = tesbackup[i][2]
+                tes[i][3] = tesbackup[i][3]
+
+            }
+        }
+        obj.array2canvas(tes)
+    }
+    )
+</script>
+
+</html>
